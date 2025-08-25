@@ -9,7 +9,7 @@ export async function middleware(req: NextRequest) {
 
     // Only check for protected routes
     if (pathname.startsWith("/dashboard") || pathname.startsWith("/studentportal")) {
-        // If no token, redirect to home page (your modal will handle auth)
+        // If no token, redirect to home page
         if (!token) {
             return NextResponse.redirect(new URL("/", req.url));
         }
@@ -19,12 +19,22 @@ export async function middleware(req: NextRequest) {
 
         // Admin can only access dashboard
         if (pathname.startsWith("/dashboard") && role !== "admin") {
-            return NextResponse.redirect(new URL("/studentportal", req.url));
+            // For students trying to access dashboard, redirect to studentportal
+            if (role === "student") {
+                return NextResponse.redirect(new URL("/studentportal", req.url));
+            }
+            // For users with no role or other roles, redirect to home
+            return NextResponse.redirect(new URL("/", req.url));
         }
 
         // Student can only access studentportal
         if (pathname.startsWith("/studentportal") && role !== "student") {
-            return NextResponse.redirect(new URL("/dashboard", req.url));
+            // For admins trying to access studentportal, redirect to dashboard
+            if (role === "admin") {
+                return NextResponse.redirect(new URL("/dashboard", req.url));
+            }
+            // For users with no role or other roles, redirect to home
+            return NextResponse.redirect(new URL("/", req.url));
         }
     }
 
