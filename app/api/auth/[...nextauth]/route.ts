@@ -40,17 +40,21 @@ export const authOptions: NextAuthOptions = {
                 password: { label: "Password", type: "password" },
             },
             async authorize(credentials) {
+                if (!credentials?.email || !credentials?.password) {
+                    return null;
+                }
+
                 const client = await clientPromise;
                 const db = client.db();
 
                 const user = await db
                     .collection("users")
-                    .findOne({ email: credentials?.email });
+                    .findOne({ email: credentials.email });
 
                 if (!user) return null;
 
                 const isValid = await bcrypt.compare(
-                    credentials!.password,
+                    credentials.password,
                     user.password
                 );
                 if (!isValid) return null;
@@ -72,30 +76,29 @@ export const authOptions: NextAuthOptions = {
         error: "/auth/error",
     },
     callbacks: {
-        async jwt({ token, user }: { token: JWT; user?: User }) {
+        async jwt({ token, user }) {
             if (user) {
-                token.id = (user as CustomUser).id;
-                token.email = (user as CustomUser).email ?? undefined;
-                token.name = (user as CustomUser).name ?? undefined;
-                token.role = (user as CustomUser).role;
-            }
-            // Ensure token.email is never null
-            if (token.email === null) {
-                token.email = undefined;
+                const customUser = user as CustomUser;
+                token.id = customUser.id;
+                token.email = customUser.email;
+                token.name = customUser.name || undefined;
+                token.role = customUser.role;
             }
             return token;
         },
-        async session({ session, token }: { session: Session; token: JWT }) {
+        async session({ session, token }) {
             if (session.user) {
-                (session.user as CustomSessionUser).id = (token as CustomJWT).id;
-                (session.user as CustomSessionUser).email = (token as CustomJWT).email as string;
-                (session.user as CustomSessionUser).name = (token as CustomJWT).name as string;
-                (session.user as CustomSessionUser).role = (token as CustomJWT).role;
+                const customToken = token as CustomJWT;
+                const customSessionUser = session.user as CustomSessionUser;
+                customSessionUser.id = customToken.id;
+                customSessionUser.email = customToken.email as string;
+                customSessionUser.name = customToken.name as string;
+                customSessionUser.role = customToken.role;
             }
             return session;
         },
     },
 };
 
-const handler = NextAuth(authOptions);
-export { handler as GET, handler as POST };
+// Export the handler directly
+export default NextAuth(authOptions);
