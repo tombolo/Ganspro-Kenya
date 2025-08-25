@@ -1,4 +1,5 @@
-import NextAuth, { type NextAuthOptions } from "next-auth";
+import NextAuth from "next-auth";
+import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { MongoDBAdapter } from "@next-auth/mongodb-adapter";
 import clientPromise from "../../../../lib/mongodb";
@@ -6,7 +7,6 @@ import bcrypt from "bcryptjs";
 import type { JWT } from "next-auth/jwt";
 import type { Session, User } from "next-auth";
 
-// Define a custom user type that includes the role property
 interface CustomUser extends User {
     id: string;
     email: string;
@@ -14,7 +14,6 @@ interface CustomUser extends User {
     role: string;
 }
 
-// Define a custom JWT type that includes the role property
 interface CustomJWT extends JWT {
     id?: string;
     email?: string;
@@ -22,7 +21,6 @@ interface CustomJWT extends JWT {
     role?: string;
 }
 
-// Define a custom session user type that includes the role property
 interface CustomSessionUser {
     id?: string;
     email?: string;
@@ -40,26 +38,16 @@ export const authOptions: NextAuthOptions = {
                 password: { label: "Password", type: "password" },
             },
             async authorize(credentials) {
-                if (!credentials?.email || !credentials?.password) {
-                    return null;
-                }
-
                 const client = await clientPromise;
                 const db = client.db();
 
-                const user = await db
-                    .collection("users")
-                    .findOne({ email: credentials.email });
+                const user = await db.collection("users").findOne({ email: credentials?.email });
 
                 if (!user) return null;
 
-                const isValid = await bcrypt.compare(
-                    credentials.password,
-                    user.password
-                );
+                const isValid = await bcrypt.compare(credentials!.password, user.password);
                 if (!isValid) return null;
 
-                // ✅ Make sure role is returned (default = "student")
                 return {
                     id: user._id.toString(),
                     email: user.email,
@@ -78,27 +66,29 @@ export const authOptions: NextAuthOptions = {
     callbacks: {
         async jwt({ token, user }) {
             if (user) {
-                const customUser = user as CustomUser;
-                token.id = customUser.id;
-                token.email = customUser.email;
-                token.name = customUser.name || undefined;
-                token.role = customUser.role;
+                token.id = (user as CustomUser).id;
+                token.email = (user as CustomUser).email ?? undefined;
+                token.name = (user as CustomUser).name ?? undefined;
+                token.role = (user as CustomUser).role;
+            }
+            if (token.email === null) {
+                token.email = undefined;
             }
             return token;
         },
         async session({ session, token }) {
             if (session.user) {
-                const customToken = token as CustomJWT;
-                const customSessionUser = session.user as CustomSessionUser;
-                customSessionUser.id = customToken.id;
-                customSessionUser.email = customToken.email as string;
-                customSessionUser.name = customToken.name as string;
-                customSessionUser.role = customToken.role;
+                (session.user as CustomSessionUser).id = (token as CustomJWT).id;
+                (session.user as CustomSessionUser).email = (token as CustomJWT).email as string;
+                (session.user as CustomSessionUser).name = (token as CustomJWT).name as string;
+                (session.user as CustomSessionUser).role = (token as CustomJWT).role;
             }
             return session;
         },
     },
 };
 
-// Export the handler directly
-export default NextAuth(authOptions);
+const handler = NextAuth(authOptions);
+
+// ✅ App Router must export GET/POST, not default
+export { handler as GET, handler as POST };
