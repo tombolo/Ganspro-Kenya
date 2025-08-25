@@ -108,23 +108,33 @@ export default function Header() {
                 }
 
                 // ✅ Always check the session to get role
-                const session = await getSession();
-                if (session?.user) {
-                    console.log('Session established for user:', session.user?.email);
+                
+
+                if (result?.error) {
+                    console.error("Login failed:", result.error);
+                    throw new Error("Invalid email or password");
+                }
+
+                if (result?.ok) {
                     setIsAuthenticated(true);
                     closeAuthModal();
 
-                    const role = (session.user as CustomSessionUser).role || "student";
-                    console.log('User role:', role);
+                    // Instead of waiting for getSession() right away,
+                    // just decode the role from JWT (via token callback).
+                    const session = await getSession(); // this will be ready soon after
+                    let role = "student"; // default
+
+                    if (session?.user && (session.user as CustomSessionUser).role) {
+                        role = (session.user as CustomSessionUser).role!;
+                    }
+
+                    console.log("User role:", role);
 
                     if (role === "admin") {
                         router.push("/dashboard");
                     } else {
                         router.push("/studentportal");
                     }
-                } else {
-                    console.error('Login failed - no session established');
-                    throw new Error('Authentication failed - please try again');
                 }
             } else {
                 // Signup logic
