@@ -1,15 +1,22 @@
 // middleware.ts
-import { withAuth } from "next-auth/middleware";
+import { getToken } from "next-auth/jwt";
 import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
-export default withAuth(
-    function middleware(req) {
-        // Custom role check - only run for authenticated users
-        const token = req.nextauth.token;
-        const role = token?.role as string | undefined;
-        const pathname = req.nextUrl.pathname;
+export async function middleware(req: NextRequest) {
+    const token = await getToken({ req });
+    const pathname = req.nextUrl.pathname;
 
-        // Redirect based on role for protected routes
+    // Only check for protected routes
+    if (pathname.startsWith("/dashboard") || pathname.startsWith("/studentportal")) {
+        // If no token, allow the request to continue (your modal will handle auth)
+        if (!token) {
+            return NextResponse.next();
+        }
+
+        // Check roles for authenticated users
+        const role = token.role as string | undefined;
+
         if (pathname.startsWith("/dashboard") && role !== "admin") {
             return NextResponse.redirect(new URL("/studentportal", req.url));
         }
@@ -17,26 +24,10 @@ export default withAuth(
         if (pathname.startsWith("/studentportal") && role !== "student") {
             return NextResponse.redirect(new URL("/dashboard", req.url));
         }
-
-        return NextResponse.next();
-    },
-    {
-        callbacks: {
-            // Only run middleware for protected routes
-            authorized: ({ req, token }) => {
-                const pathname = req.nextUrl.pathname;
-
-                // Only check auth for protected routes
-                if (pathname.startsWith("/dashboard") || pathname.startsWith("/studentportal")) {
-                    return !!token;
-                }
-
-                // Allow access to all other routes
-                return true;
-            },
-        },
     }
-);
+
+    return NextResponse.next();
+}
 
 export const config = {
     matcher: ["/dashboard/:path*", "/studentportal/:path*"],
