@@ -506,7 +506,7 @@ export default function DashboardPage() {
                         {/* Welcome Header */}
                         <div className="mb-8">
                             <h1 className="text-2xl font-bold text-gray-800">Welcome back, {session.user?.name || 'Admin'}!</h1>
-                            <p className="text-gray-600">Here's what's happening with Ganspro today</p>
+                            <p className="text-gray-600">Here&apos;s what&apos;s happening with Ganspro today</p>
                         </div>
 
                         {/* Stats Cards */}

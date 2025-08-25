@@ -80,7 +80,7 @@ export default function HowItWorks() {
                         </div>
                         <h2 className="text-3xl font-bold text-indigo-900 mb-4">For Supporters</h2>
                         <p className="text-gray-600 max-w-3xl mx-auto">
-                            Make a difference in a student's life through these simple steps
+                            Make a difference in a student&apos;s life through these simple steps
                         </p>
                     </div>
 
@@ -107,7 +107,7 @@ export default function HowItWorks() {
                             </div>
                             <h3 className="text-xl font-semibold text-gray-900 mb-3">Choose Student</h3>
                             <p className="text-gray-600">
-                                Browse student profiles and select a student you'd like to support
+                                Browse student profiles and select a student you&apos;d like to support
                             </p>
                         </div>
 
