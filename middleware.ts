@@ -1,4 +1,3 @@
-// middleware.ts
 import { getToken } from "next-auth/jwt";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
@@ -7,14 +6,14 @@ export async function middleware(req: NextRequest) {
     const token = await getToken({ req });
     const pathname = req.nextUrl.pathname;
 
-    // Only check for protected routes
+    // Protected routes
     if (pathname.startsWith("/dashboard") || pathname.startsWith("/studentportal")) {
-        // If no token, allow the request to continue (your modal will handle auth)
+        // 🔒 If not logged in, force logout
         if (!token) {
-            return NextResponse.next();
+            return NextResponse.redirect(new URL("/api/auth/signout", req.url));
         }
 
-        // Check roles for authenticated users
+        // ✅ Authenticated: check roles
         const role = token.role as string | undefined;
 
         if (pathname.startsWith("/dashboard") && role !== "admin") {
