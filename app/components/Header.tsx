@@ -98,6 +98,7 @@ export default function Header() {
                     redirect: false,
                     email,
                     password,
+                    callbackUrl: "/dashboard", // <-- don’t let NextAuth decide
                 });
 
                 console.log('SignIn result:', result);
