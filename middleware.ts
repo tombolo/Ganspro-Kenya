@@ -6,36 +6,31 @@ import type { NextRequest } from "next/server";
 export async function middleware(req: NextRequest) {
     const token = await getToken({ req });
     const pathname = req.nextUrl.pathname;
+    const role = token?.role as string | undefined;
 
-    // Only check for protected routes
-    if (pathname.startsWith("/dashboard") || pathname.startsWith("/studentportal")) {
-        // If no token, redirect to home page
-        if (!token) {
+    // If no token, allow access to home page (auth modal will handle login)
+    if (!token) {
+        if (pathname.startsWith("/dashboard") || pathname.startsWith("/studentportal")) {
             return NextResponse.redirect(new URL("/", req.url));
         }
+        return NextResponse.next();
+    }
 
-        // Check roles for authenticated users
-        const role = token.role as string | undefined;
-
-        // Admin can only access dashboard
-        if (pathname.startsWith("/dashboard") && role !== "admin") {
-            // For students trying to access dashboard, redirect to studentportal
-            if (role === "student") {
-                return NextResponse.redirect(new URL("/studentportal", req.url));
-            }
-            // For users with no role or other roles, redirect to home
-            return NextResponse.redirect(new URL("/", req.url));
+    // Check role-based access
+    if (pathname.startsWith("/dashboard") && role !== "admin") {
+        // Don't redirect if user is already where they should be
+        if (role === "student" && !pathname.startsWith("/studentportal")) {
+            return NextResponse.redirect(new URL("/studentportal", req.url));
         }
+        return NextResponse.next();
+    }
 
-        // Student can only access studentportal
-        if (pathname.startsWith("/studentportal") && role !== "student") {
-            // For admins trying to access studentportal, redirect to dashboard
-            if (role === "admin") {
-                return NextResponse.redirect(new URL("/dashboard", req.url));
-            }
-            // For users with no role or other roles, redirect to home
-            return NextResponse.redirect(new URL("/", req.url));
+    if (pathname.startsWith("/studentportal") && role !== "student") {
+        // Don't redirect if user is already where they should be
+        if (role === "admin" && !pathname.startsWith("/dashboard")) {
+            return NextResponse.redirect(new URL("/dashboard", req.url));
         }
+        return NextResponse.next();
     }
 
     return NextResponse.next();
