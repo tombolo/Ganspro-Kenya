@@ -58,10 +58,7 @@ export const authOptions: NextAuthOptions = {
     ],
     session: { strategy: "jwt" },
     secret: process.env.NEXTAUTH_SECRET,
-    pages: {
-        signIn: "/auth/login",
-        error: "/auth/error",
-    },
+    // 👇 Removed pages block so NextAuth won’t redirect to /auth/login
     callbacks: {
         async jwt({ token, user }) {
             if (user) {
