@@ -362,7 +362,7 @@ export default function StudentPage() {
                     <div className="flex flex-col md:flex-row items-start md:items-center justify-between">
                         <div className="mb-4 md:mb-0">
                             <h2 className="text-xl md:text-2xl font-bold mb-2">Welcome back, {student?.name}!</h2>
-                            <p className="opacity-90 text-sm md:text-base">Here's your academic overview and quick access to important resources.</p>
+                            <p className="opacity-90 text-sm md:text-base">Here&apos;s your academic overview and quick access to important resources.</p>
                         </div>
                         <div className="bg-white bg-opacity-20 rounded-lg p-3 w-full md:w-auto">
                             <p className="text-sm">Student ID: <span className="font-bold">{student?.studentId}</span></p>
