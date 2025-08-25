@@ -8,12 +8,12 @@ export default function Testimonials() {
         {
             name: "John Mutua",
             school: "University of Nairobi",
-            quote: "Ganspro didn't just pay my fees, they gave me hope. Their support allowed me to focus on my studies without financial worries."
+            quote: "Ganspro didn&lsquo;t just pay my fees, they gave me hope. Their support allowed me to focus on my studies without financial worries."
         },
         {
             name: "Grace Wambua",
             school: "Kitui High School",
-            quote: "The scholarship from Ganspro changed my life. I'm now the first in my family to attend secondary school and I'm determined to succeed."
+            quote: "The scholarship from Ganspro changed my life. I&lsquo;m now the first in my family to attend secondary school and I&lsquo;m determined to succeed."
         }
     ];
 

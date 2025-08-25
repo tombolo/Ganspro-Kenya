@@ -14,7 +14,7 @@ export default function Contact() {
                         <div className="text-center">
                             <h1 className="text-4xl md:text-5xl font-bold mb-4">Get in Touch</h1>
                             <p className="text-xl text-indigo-100 max-w-3xl mx-auto">
-                                We'd love to hear from you. Contact us to learn more about our programs or how you can support education in Ukambani.
+                                We&lsquo;d love to hear from you. Contact us to learn more about our programs or how you can support education in Ukambani.
                             </p>
                         </div>
                     </div>

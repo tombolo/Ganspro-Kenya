@@ -23,6 +23,14 @@ interface SignupResponse {
     };
 }
 
+// Define a custom session user type that includes the role property
+interface CustomSessionUser {
+    id?: string;
+    email?: string;
+    name?: string;
+    role?: string;
+}
+
 export default function Header() {
     const { data: session } = useSession();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -106,7 +114,7 @@ export default function Header() {
                     setIsAuthenticated(true);
                     closeAuthModal();
 
-                    const role = (session.user as any).role || "student";
+                    const role = (session.user as CustomSessionUser).role || "student";
                     console.log('User role:', role);
 
                     if (role === "admin") {
@@ -232,10 +240,10 @@ export default function Header() {
 
                                 {isAuthenticated && session?.user && (
                                     <Link
-                                        href={(session.user as any).role === "admin" ? "/dashboard" : "/studentportal"}
+                                        href={(session.user as CustomSessionUser).role === "admin" ? "/dashboard" : "/studentportal"}
                                         className="px-6 py-2 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-medium rounded-full transition-all duration-300 shadow-lg text-lg"
                                     >
-                                        {(session.user as any).role === "admin"
+                                        {(session.user as CustomSessionUser).role === "admin"
                                             ? "Go to Dashboard"
                                             : "Go to Student Portal"}
                                     </Link>
@@ -344,10 +352,10 @@ export default function Header() {
                             ) : (
                                 session?.user && (
                                     <Link
-                                        href={(session.user as any).role === "admin" ? "/dashboard" : "/studentportal"}
+                                        href={(session.user as CustomSessionUser).role === "admin" ? "/dashboard" : "/studentportal"}
                                         className="w-full px-4 py-3 text-center bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-medium rounded-lg transition-all duration-300 shadow-lg block"
                                     >
-                                        {(session.user as any).role === "admin"
+                                        {(session.user as CustomSessionUser).role === "admin"
                                             ? "Go to Dashboard"
                                             : "Go to Student Portal"}
                                     </Link>
@@ -482,7 +490,7 @@ export default function Header() {
                             <div className="mt-6 text-center text-sm text-gray-600">
                                 {authMode === "login" ? (
                                     <>
-                                        Don't have an account?{" "}
+                                        Don&apos;t have an account?{" "}
                                         <button
                                             type="button"
                                             className="text-orange-600 hover:text-orange-800 font-medium transition-colors duration-200"

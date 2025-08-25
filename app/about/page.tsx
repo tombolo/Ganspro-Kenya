@@ -31,7 +31,7 @@ export default function About() {
                             <p className="text-gray-700">
                                 To provide educational opportunities and resources to needy students in Ukambani,
                                 breaking the cycle of poverty through access to quality education and creating a
-                                pathway to brighter futures for the community's youth.
+                                pathway to brighter futures for the community&apos;s youth.
                             </p>
                         </div>
 
@@ -76,7 +76,7 @@ export default function About() {
 
                                 <p className="text-gray-700 text-lg">
                                     Today, Ganspro continues to expand its reach, developing new programs and partnerships
-                                    to address the evolving educational needs of Ukambani's youth while maintaining our
+                                    to address the evolving educational needs of Ukambani&apos;s youth while maintaining our
                                     core commitment to accessibility, transparency, and community empowerment.
                                 </p>
                             </div>

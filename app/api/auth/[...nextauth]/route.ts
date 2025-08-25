@@ -4,7 +4,31 @@ import { MongoDBAdapter } from "@next-auth/mongodb-adapter";
 import clientPromise from "../../../../lib/mongodb";
 import bcrypt from "bcryptjs";
 import type { JWT } from "next-auth/jwt";
-import type { Session } from "next-auth";
+import type { Session, User } from "next-auth";
+
+// Define a custom user type that includes the role property
+interface CustomUser extends User {
+    id: string;
+    email: string;
+    name?: string | null;
+    role: string;
+}
+
+// Define a custom JWT type that includes the role property
+interface CustomJWT extends JWT {
+    id?: string;
+    email?: string;
+    name?: string;
+    role?: string;
+}
+
+// Define a custom session user type that includes the role property
+interface CustomSessionUser {
+    id?: string;
+    email?: string;
+    name?: string;
+    role?: string;
+}
 
 export const authOptions: NextAuthOptions = {
     adapter: MongoDBAdapter(clientPromise),
@@ -48,21 +72,25 @@ export const authOptions: NextAuthOptions = {
         error: "/auth/error",
     },
     callbacks: {
-        async jwt({ token, user }: { token: JWT; user?: any }) {
+        async jwt({ token, user }: { token: JWT; user?: User }) {
             if (user) {
-                token.id = user.id;
-                token.email = user.email;
-                token.name = user.name;
-                token.role = user.role; // ✅ attach role
+                token.id = (user as CustomUser).id;
+                token.email = (user as CustomUser).email ?? undefined;
+                token.name = (user as CustomUser).name ?? undefined;
+                token.role = (user as CustomUser).role;
+            }
+            // Ensure token.email is never null
+            if (token.email === null) {
+                token.email = undefined;
             }
             return token;
         },
         async session({ session, token }: { session: Session; token: JWT }) {
             if (session.user) {
-                (session.user as any).id = token.id;
-                session.user.email = token.email as string;
-                session.user.name = token.name as string;
-                (session.user as any).role = token.role; // ✅ attach role
+                (session.user as CustomSessionUser).id = (token as CustomJWT).id;
+                (session.user as CustomSessionUser).email = (token as CustomJWT).email as string;
+                (session.user as CustomSessionUser).name = (token as CustomJWT).name as string;
+                (session.user as CustomSessionUser).role = (token as CustomJWT).role;
             }
             return session;
         },
