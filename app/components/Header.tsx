@@ -2,26 +2,11 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { FiUser, FiX } from "react-icons/fi";
-import { signIn, useSession, getSession } from 'next-auth/react';
+import { motion } from "framer-motion";
+import { FiUser } from "react-icons/fi";
+import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-
-interface SignupResponse {
-    success: boolean;
-    message?: string;
-    error?: string;
-    userId?: string;
-    user?: {
-        email: string;
-        name: string;
-    };
-    missingFields?: {
-        email: boolean;
-        password: boolean;
-        name: boolean;
-    };
-}
+import AuthModal from './AuthModal';
 
 // Define a custom session user type that includes the role property
 interface CustomSessionUser {
@@ -32,146 +17,51 @@ interface CustomSessionUser {
 }
 
 export default function Header() {
-    const { data: session } = useSession();
+    const { data: session, status, update } = useSession();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [authModalOpen, setAuthModalOpen] = useState(false);
     const [authMode, setAuthMode] = useState<"login" | "signup">("login");
-    const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState('');
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [shouldRedirect, setShouldRedirect] = useState(false);
     const router = useRouter();
 
-    // Form states
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [name, setName] = useState('');
-
-    // Check auth status on component mount
-    useEffect(() => {
-        console.log('Header component mounted - checking auth status');
-        const checkAuth = async () => {
-            try {
-                console.log('Fetching session...');
-                const session = await getSession();
-                console.log('Session data:', session);
-                setIsAuthenticated(!!session);
-                if (session) {
-                    console.log('User is authenticated:', session.user?.email);
-                } else {
-                    console.log('No active session found');
-                }
-            } catch (error) {
-                console.error('Error checking auth status:', error);
-                setIsAuthenticated(false);
-            }
-        };
-        checkAuth();
-    }, []);
+    // Use the session status to determine if user is authenticated
+    const isAuthenticated = status === "authenticated";
 
     const openAuthModal = (mode: "login" | "signup") => {
-        console.log(`Opening auth modal in ${mode} mode`);
         setAuthMode(mode);
         setAuthModalOpen(true);
         setMobileMenuOpen(false);
-        setError('');
     };
 
     const closeAuthModal = () => {
-        console.log('Closing auth modal');
         setAuthModalOpen(false);
-        setEmail('');
-        setPassword('');
-        setName('');
-        setError('');
     };
 
-    const handleAuthSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        console.log('Auth form submitted in', authMode, 'mode');
-        setIsLoading(true);
-        setError('');
+    const switchAuthMode = (mode: "login" | "signup") => {
+        setAuthMode(mode);
+    };
 
-        try {
-            if (authMode === "login") {
-                console.log('Attempting login with email:', email);
-                const result = await signIn('credentials', {
-                    redirect: false,
-                    email,
-                    password,
-                    callbackUrl: "/dashboard", // <-- don’t let NextAuth decide
-                });
+    // Handle successful authentication from AuthModal
+    const handleAuthSuccess = () => {
+        setShouldRedirect(true);
+        closeAuthModal();
+    };
 
-                console.log('SignIn result:', result);
+    // Redirect user based on role after successful authentication
+    useEffect(() => {
+        if (shouldRedirect && isAuthenticated && session?.user) {
+            const userRole = (session.user as CustomSessionUser).role || 'student';
 
-                if (result?.error) {
-                    console.error('Login error:', result.error);
-                    throw new Error(result.error);
-                }
-
-                // ✅ Always check the session to get role
-                
-
-                if (result?.error) {
-                    console.error("Login failed:", result.error);
-                    throw new Error("Invalid email or password");
-                }
-
-                if (result?.ok) {
-                    setIsAuthenticated(true);
-                    closeAuthModal();
-
-                    // Instead of waiting for getSession() right away,
-                    // just decode the role from JWT (via token callback).
-                    const session = await getSession(); // this will be ready soon after
-                    let role = "student"; // default
-
-                    if (session?.user && (session.user as CustomSessionUser).role) {
-                        role = (session.user as CustomSessionUser).role!;
-                    }
-
-                    console.log("User role:", role);
-
-                    if (role === "admin") {
-                        router.push("/dashboard");
-                    } else {
-                        router.push("/studentportal");
-                    }
-                }
+            // Redirect based on role
+            if (userRole === "admin") {
+                router.push("/dashboard");
             } else {
-                // Signup logic
-                console.log('Attempting signup with:', { email, name });
-                const response = await fetch('/api/auth/signup', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ email, password, name }),
-                });
-
-                const data: SignupResponse = await response.json();
-                console.log('Signup response:', data);
-
-                if (!response.ok || !data.success) {
-                    console.error('Signup error:', data.error || 'Unknown error');
-                    setError(data.error || 'Something went wrong');
-                    throw new Error(data.error || 'Something went wrong');
-                }
-
-                console.log('Signup successful for user:', data.user?.email);
-                console.log('Now attempting auto-login...');
-
-                // Switch back to login mode
-                setAuthMode("login");
-                setError('');
-                setPassword('');
-                setName('');
+                router.push("/studentportal");
             }
-        } catch (err) {
-            setError(err instanceof Error ? err.message : 'An unexpected error occurred');
-        } finally {
-            setIsLoading(false);
+
+            setShouldRedirect(false);
         }
-    };
+    }, [shouldRedirect, isAuthenticated, session, router]);
 
     return (
         <>
@@ -261,7 +151,6 @@ export default function Header() {
                                 )}
                             </div>
                         </div>
-
 
                         {/* Mobile menu button */}
                         <div className="-mr-2 flex md:hidden">
@@ -373,160 +262,17 @@ export default function Header() {
                                 )
                             )}
                         </div>
-
                     </div>
                 </div>
             </header>
 
-            {/* Auth Modal */}
-            <AnimatePresence>
-                {authModalOpen && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
-                        onClick={closeAuthModal}
-                    >
-                        <motion.div
-                            initial={{ y: 20, opacity: 0 }}
-                            animate={{ y: 0, opacity: 1 }}
-                            exit={{ y: 20, opacity: 0 }}
-                            className="relative bg-gradient-to-br from-white to-gray-50 rounded-2xl p-8 w-full max-w-md mx-4 border border-gray-200 shadow-2xl"
-                            onClick={(e) => e.stopPropagation()}
-                        >
-                            <button
-                                onClick={closeAuthModal}
-                                className="absolute top-4 right-4 p-1 rounded-full hover:bg-gray-100 transition-colors duration-200"
-                            >
-                                <FiX className="text-gray-500 hover:text-gray-700" size={20} />
-                            </button>
-
-                            <div className="text-center">
-                                <div className="mx-auto h-16 w-16 bg-gradient-to-r from-orange-500 to-amber-500 rounded-full flex items-center justify-center mb-4 shadow-md">
-                                    <FiUser className="text-white text-2xl" />
-                                </div>
-                                <h2 className="text-3xl font-extrabold text-gray-900 mb-2">
-                                    {authMode === "login" ? "Welcome back!" : "Join us today"}
-                                </h2>
-                                <p className="text-gray-600 mb-6">
-                                    {authMode === "login" ? "Sign in to continue" : "Create your account in seconds"}
-                                </p>
-                            </div>
-
-                            {error && (
-                                <div className="mb-4 bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded" role="alert">
-                                    <p>{error}</p>
-                                </div>
-                            )}
-
-                            <form className="space-y-5" onSubmit={handleAuthSubmit}>
-                                {authMode === "signup" && (
-                                    <div>
-                                        <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-                                            Full Name
-                                        </label>
-                                        <input
-                                            id="name"
-                                            name="name"
-                                            type="text"
-                                            required
-                                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200"
-                                            placeholder="John Doe"
-                                            value={name}
-                                            onChange={(e) => setName(e.target.value)}
-                                        />
-                                    </div>
-                                )}
-                                <div>
-                                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                                        Email address
-                                    </label>
-                                    <input
-                                        id="email"
-                                        name="email"
-                                        type="email"
-                                        autoComplete="email"
-                                        required
-                                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200"
-                                        placeholder="your@email.com"
-                                        value={email}
-                                        onChange={(e) => setEmail(e.target.value)}
-                                    />
-                                </div>
-                                <div>
-                                    <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-                                        Password
-                                    </label>
-                                    <input
-                                        id="password"
-                                        name="password"
-                                        type="password"
-                                        autoComplete={authMode === "login" ? "current-password" : "new-password"}
-                                        required
-                                        minLength={8}
-                                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200"
-                                        placeholder="••••••••"
-                                        value={password}
-                                        onChange={(e) => setPassword(e.target.value)}
-                                    />
-                                    {authMode === "signup" && (
-                                        <p className="mt-1 text-xs text-gray-500">Password must be at least 8 characters</p>
-                                    )}
-                                </div>
-
-                                <div>
-                                    <motion.button
-                                        whileHover={{ scale: 1.01 }}
-                                        whileTap={{ scale: 0.99 }}
-                                        type="submit"
-                                        disabled={isLoading}
-                                        className="w-full py-3 px-4 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-medium rounded-lg transition-all duration-300 shadow-md flex items-center justify-center"
-                                    >
-                                        {isLoading ? (
-                                            <>
-                                                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                                </svg>
-                                                {authMode === "login" ? "Signing in..." : "Creating account..."}
-                                            </>
-                                        ) : (
-                                            authMode === "login" ? "Sign In" : "Sign Up"
-                                        )}
-                                    </motion.button>
-                                </div>
-                            </form>
-
-                            <div className="mt-6 text-center text-sm text-gray-600">
-                                {authMode === "login" ? (
-                                    <>
-                                        Don&apos;t have an account?{" "}
-                                        <button
-                                            type="button"
-                                            className="text-orange-600 hover:text-orange-800 font-medium transition-colors duration-200"
-                                            onClick={() => setAuthMode("signup")}
-                                        >
-                                            Sign up
-                                        </button>
-                                    </>
-                                ) : (
-                                    <>
-                                        Already have an account?{" "}
-                                        <button
-                                            type="button"
-                                            className="text-orange-600 hover:text-orange-800 font-medium transition-colors duration-200"
-                                            onClick={() => setAuthMode("login")}
-                                        >
-                                            Sign in
-                                        </button>
-                                    </>
-                                )}
-                            </div>
-                        </motion.div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+            <AuthModal
+                isOpen={authModalOpen}
+                onClose={closeAuthModal}
+                mode={authMode}
+                switchMode={switchAuthMode}
+                onAuthSuccess={handleAuthSuccess}
+            />
         </>
     );
 }
