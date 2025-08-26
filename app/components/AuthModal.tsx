@@ -10,6 +10,7 @@ type AuthModalProps = {
     onClose: () => void;
     mode: "login" | "signup";
     switchMode: (mode: "login" | "signup") => void;
+    onAuthSuccess?: (role: string) => void; // Add this line
 };
 
 interface SignupResponse {
