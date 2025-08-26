@@ -33,7 +33,7 @@ export default function AuthLoading() {
             <div className="text-center">
                 <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-indigo-600 mx-auto"></div>
                 <p className="mt-4 text-gray-600">Setting up your experience...</p>
-                <p className="text-sm text-gray-500">You'll be redirected in a moment</p>
+                <p className="text-sm text-gray-500">You&apos;ll be redirected in a moment</p>
             </div>
         </div>
     );
