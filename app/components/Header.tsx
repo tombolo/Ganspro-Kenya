@@ -1,7 +1,7 @@
 'use client';
 import Link from "next/link";
 import Image from "next/image";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { FiUser } from "react-icons/fi";
 import { useSession } from 'next-auth/react';
@@ -17,11 +17,10 @@ interface CustomSessionUser {
 }
 
 export default function Header() {
-    const { data: session, status, update } = useSession();
+    const { data: session, status } = useSession();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [authModalOpen, setAuthModalOpen] = useState(false);
     const [authMode, setAuthMode] = useState<"login" | "signup">("login");
-    const [shouldRedirect, setShouldRedirect] = useState(false);
     const router = useRouter();
 
     // Use the session status to determine if user is authenticated
@@ -41,27 +40,17 @@ export default function Header() {
         setAuthMode(mode);
     };
 
-    // Handle successful authentication from AuthModal
-    const handleAuthSuccess = () => {
-        setShouldRedirect(true);
+    // Handle successful authentication from AuthModal - NOW WITH ROLE PARAMETER
+    const handleAuthSuccess = (role: string) => {
         closeAuthModal();
-    };
 
-    // Redirect user based on role after successful authentication
-    useEffect(() => {
-        if (shouldRedirect && isAuthenticated && session?.user) {
-            const userRole = (session.user as CustomSessionUser).role || 'student';
-
-            // Redirect based on role
-            if (userRole === "admin") {
-                router.push("/dashboard");
-            } else {
-                router.push("/studentportal");
-            }
-
-            setShouldRedirect(false);
+        // Redirect immediately based on role - no waiting for session update
+        if (role === "admin") {
+            router.push("/dashboard");
+        } else {
+            router.push("/studentportal");
         }
-    }, [shouldRedirect, isAuthenticated, session, router]);
+    };
 
     return (
         <>
